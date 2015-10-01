@@ -14,6 +14,11 @@ treeherder.factory('thTabs', [
                     content: "plugins/failure_summary/main.html",
                     enabled: true
                 },
+                "errorClassification": {
+                    title: "Error Classifications",
+                    content: "plugins/error_classification/main.html",
+                    enabled: true
+                },
                 "annotations": {
                     title: "Annotations",
                     content: "plugins/annotations/main.html",
@@ -28,7 +33,7 @@ treeherder.factory('thTabs', [
                     title: "Job Info",
                     content: "plugins/talos/main.html",
                     enabled: false
-                }
+                },
             },
             "selectedTab": "jobDetails",
             "showTab" : function(tab, contentId){
