@@ -35,6 +35,7 @@ def get_error_summary(all_errors):
         # get a meaningful search term out of the error line
         search_term = get_error_search_term(clean_line)
         bugs = dict(open_recent=[], all_others=[])
+        in_structured = err.get("in_structured", False)
 
         # collect open recent and all other bugs suggestions
         if search_term:
@@ -70,7 +71,8 @@ def get_error_summary(all_errors):
         error_summary.append({
             "search": clean_line,
             "search_terms": search_terms,
-            "bugs": bugs
+            "bugs": bugs,
+            "in_structured": in_structured
         })
 
     return error_summary

@@ -66,6 +66,9 @@ class StepParser(ParserBase):
     RE_STEP_MARKER = re.compile(r'={9} (?P<marker_type>Started|Finished) (?P<name>.*?) '
                                 r'\(results: (?P<result_code>\d+), elapsed: .*?\) '
                                 r'\(at (?P<timestamp>.*?)\)')
+
+    RE_STRUCTURED_MARKER = re.compile(r'STRUCTURED LOG (?P<marker_type>START|END)')
+
     STATES = {
         # The initial state until we record the first step.
         "awaiting_first_step": 0,
@@ -142,6 +145,19 @@ class StepParser(ParserBase):
             # Buildbot logs would result in the creation of an unnamed step at the
             # start of the job, unless we skip them. (Which is not desired, since
             # the lines are metadata and not test/build output.)
+            return
+
+        # Logs can have parts delimited by markers 'STRUCTURED LOG START' and
+        # 'STRUCTURED LOG END'. Between these limits the logs are still unstructured,
+        # but the log data is also avaiable in the structured log artifacts.
+        # For now we just mark log lines that have a structured counterpart in
+        # the sub parser
+        structured_marker_match = self.RE_STEP_MARKER.match(line)
+        if structured_marker_match:
+            if (structured_marker_match.group('marker_type') == "START"):
+                self.sub_parser.in_structured = True
+            else:
+                self.sub_parser.in_structured = False
             return
 
         step_marker_match = self.RE_STEP_MARKER.match(line)
@@ -414,11 +430,13 @@ class ErrorParser(ParserBase):
     def __init__(self):
         """A simple error detection sub-parser"""
         super(ErrorParser, self).__init__("errors")
+        self.in_structured = False
 
     def add(self, line, lineno):
         self.artifact.append({
             "linenumber": lineno,
-            "line": line.rstrip()
+            "line": line.rstrip(),
+            "in_structured": self.in_structured
         })
 
     def parse_line(self, line, lineno):
