@@ -54,10 +54,10 @@ def match_errors(repository, jm, job_guid):
 
     for failure_line in all_matched:
         # TODO: store all matches
-        best_match = failure_line.best_match(AUTOCLASSIFY_CUTOFF_RATIO)
+        best_match = failure_line.best_automatic_match(AUTOCLASSIFY_CUTOFF_RATIO)
         if best_match:
-            best_match.is_best = True
-            best_match.save()
+            failure_line.best_classification = best_match.classified_failure
+            failure_line.save()
 
     if all_matched:
         job_id = jm.get_job_ids_by_guid([job_guid])[job_guid]["id"]

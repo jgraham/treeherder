@@ -428,7 +428,8 @@ class JobsModel(TreeherderModelBase):
 
         manual_detector = Matcher.objects.get(name="ManualDetector")
 
-        failure_line.set_classification(manual_detector)
+        classification = failure_line.set_classification(manual_detector)
+        failure_line.verify_best_classification(classification)
 
     def manual_classification_line(self, job_id):
         """
@@ -479,7 +480,7 @@ class JobsModel(TreeherderModelBase):
             return False
 
         num_failure_lines = FailureLine.objects.filter(job_guid=job["job_guid"],
-                                                       matches__is_best=True).count()
+                                                       best_classification__isnull=False).count()
         if num_failure_lines == 0:
             return False
 
@@ -491,8 +492,8 @@ class JobsModel(TreeherderModelBase):
         job = self.get_job(job_id)[0]
 
         failure_lines = FailureLine.objects.filter(
-            job_guid=job["job_guid"], matches__is_best=True).prefetch_related(
-                'classified_failures')
+            job_guid=job["job_guid"], best_classification__isnull=False).select_related(
+                'best_classification')
 
         bugs = set()
         for line in failure_lines:
@@ -582,10 +583,10 @@ class JobsModel(TreeherderModelBase):
         if failure_line is None:
             return
 
-        failure = ClassifiedFailure.objects.best_for_line(failure_line)
-        if failure and failure.bug_number is None:
-            failure.bug_number = bug_id
-            failure.save()
+        classification = failure_line.best_classification
+        if classification and classification.bug_number is None:
+            classification.bug_number = bug_id
+            classification.save()
 
     def calculate_eta(self, sample_window_seconds, debug):
 

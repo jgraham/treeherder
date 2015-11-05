@@ -566,6 +566,12 @@ class FailureLine(models.Model):
     stack = models.TextField(blank=True, null=True)
     stackwalk_stdout = models.TextField(blank=True, null=True)
     stackwalk_stderr = models.TextField(blank=True, null=True)
+
+    best_classification = FlexibleForeignKey("ClassifiedFailure",
+                                             related_name="best_for_lines",
+                                             null=True)
+    best_is_verified = models.NullBooleanField(null=True)
+
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
@@ -578,13 +584,13 @@ class FailureLine(models.Model):
             ('job_guid', 'line')
         )
 
-    def best_match(self, min_score=0):
-        match = FailureMatch.objects.filter(failure_line_id=self.id).order_by(
+    def best_automatic_match(self, min_score=0):
+        return FailureMatch.objects.filter(
+            failure_line_id=self.id,
+            score__gt=min_score).order_by(
             "-score",
-            "-classified_failure__modified").first()
-
-        if match and match.score > min_score:
-            return match
+            "-classified_failure__modified").select_related(
+                'classified_failure').first()
 
     def set_classification(self, matcher, bug_number=None):
         with transaction.atomic():
@@ -594,32 +600,22 @@ class FailureLine(models.Model):
             else:
                 classification = ClassifiedFailure.objects.create()
 
-            FailureMatch.objects.filter(
-                failure_line=self,
-                is_best=True).update(is_best=False)
-
             new_link = FailureMatch(
                 failure_line=self,
                 classified_failure=classification,
                 matcher=matcher,
-                score=1,
-                is_best=True)
+                score=1)
             new_link.save()
 
+        return classification
 
-class ClassifiedFailureManager(models.Manager):
-    def best_for_line(self, failure_line):
-        try:
-            return ClassifiedFailure.objects.get(
-                failure_lines__id=failure_line.id,
-                matches__is_best=True)
-        except ClassifiedFailure.DoesNotExist:
-            return None
+    def verify_best_classification(self, classification):
+        self.best_classification = classification
+        self.best_is_verified = True
+        self.save()
 
 
 class ClassifiedFailure(models.Model):
-    objects = ClassifiedFailureManager()
-
     id = BigAutoField(primary_key=True)
     failure_lines = models.ManyToManyField(FailureLine, through='FailureMatch',
                                            related_name='classified_failures')
@@ -726,7 +722,6 @@ class FailureMatch(models.Model):
 
     matcher = models.ForeignKey(Matcher)
     score = models.DecimalField(max_digits=3, decimal_places=2, blank=True, null=True)
-    is_best = models.BooleanField(default=False)
 
     # TODO: add indexes once we know which queries will be typically executed
 
