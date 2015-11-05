@@ -18,8 +18,6 @@ from treeherder.webapp.api.utils import (UrlQueryFilter,
                                          with_jobs)
 
 class FailureLineViewSet(viewsets.ViewSet):
-    queryset = FailureLine.objects.all()
-    serializer_class = serializers.FailureLineNoStackSerializer
 
     def retrieve(self, request, pk=None):
         """
