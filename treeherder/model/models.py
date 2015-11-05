@@ -570,7 +570,7 @@ class FailureLine(models.Model):
     best_classification = FlexibleForeignKey("ClassifiedFailure",
                                              related_name="best_for_lines",
                                              null=True)
-    best_is_verified = models.NullBooleanField(null=True)
+    best_is_verified = models.BooleanField(default=False)
 
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
