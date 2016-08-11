@@ -23,7 +23,7 @@
         <!-- endbuild -->
 
     </head>
-    <body ng-controller="MainCtrl" ng-keydown="processKeyboardInput($event)">
+    <body ng-controller="MainCtrl" th-main-keys>
         <div id="global-container">
             <div id="onscreen-overlay" ng-if="onscreenOverlayShowing"
                  ng-click="setOnscreenShortcutsShowing(false)">
@@ -83,6 +83,7 @@
         <script src="js/directives/treeherder/resultsets.js"></script>
         <script src="js/directives/treeherder/top_nav_bar.js"></script>
         <script src="js/directives/treeherder/bottom_nav_panel.js"></script>
+        <script src="js/directives/treeherder/keyboard.js"></script>
         <!-- Main services -->
         <script src="js/services/main.js"></script>
         <script src="js/services/buildapi.js"></script>
